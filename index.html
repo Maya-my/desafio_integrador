@@ -1,1 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taylor &amp; Propagación del Error — Desafío Integrador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
+<style>
+  :root{
+    --paper:#EEF1EC;
+    --paper-card:#FBFBF9;
+    --ink:#16232E;
+    --ink-soft:#3F4E58;
+    --teal:#1F7A6C;
+    --teal-deep:#144F45;
+    --amber:#C6862B;
+    --rust:#A8422E;
+    --rule:#C9D2CC;
+    --grid-line: rgba(31,122,108,0.08);
+  }
+ 
+  *{ box-sizing:border-box; }
+ 
+  html{ scroll-behavior:smooth; }
+ 
+  body{
+    margin:0;
+    background:
+      repeating-linear-gradient(0deg, var(--grid-line) 0 1px, transparent 1px 32px),
+      repeating-linear-gradient(90deg, var(--grid-line) 0 1px, transparent 1px 32px),
+      var(--paper);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    line-height:1.6;
+  }
+ 
+  a{ color:var(--teal-deep); }
+ 
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;
+    padding:6rem 1.5rem 4.5rem;
+    max-width:1000px;
+    margin:0 auto;
+    text-align:left;
+  }
+ 
+  .hero-eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.78rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--teal-deep);
+    display:flex;
+    align-items:center;
+    gap:0.7rem;
+    margin-bottom:1.6rem;
+  }
+  .hero-eyebrow .tick-row{
+    display:flex; gap:3px;
+  }
+  .hero-eyebrow .tick{
+    width:2px; height:10px; background:var(--rust); opacity:0.55;
+  }
+  .hero-eyebrow .tick:nth-child(5n){ height:16px; opacity:1; }
+ 
+  .hero h1{
+    font-family:'Fraunces', serif;
+    font-optical-sizing:auto;
+    font-weight:600;
+    font-size:clamp(2.2rem, 5vw, 3.6rem);
+    line-height:1.06;
+    margin:0 0 1.1rem;
+    max-width:15ch;
+    color:var(--ink);
+  }
+  .hero h1 em{
+    font-style:italic;
+    color:var(--teal-deep);
+  }
+ 
+  .hero p.lede{
+    max-width:56ch;
+    font-size:1.08rem;
+    color:var(--ink-soft);
+    margin:0 0 2.2rem;
+  }
+ 
+  .hero-meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:0.9rem;
+  }
+  .meta-chip{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.78rem;
+    border:1px solid var(--rule);
+    background:var(--paper-card);
+    padding:0.45rem 0.8rem;
+    border-radius:3px;
+    color:var(--ink-soft);
+  }
+  .meta-chip b{ color:var(--ink); }
+ 
+  /* ---------- NAV ---------- */
+  nav.subnav{
+    position:sticky; top:0; z-index:20;
+    background:rgba(238,241,236,0.92);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--rule);
+  }
+  nav.subnav .inner{
+    max-width:1000px; margin:0 auto;
+    display:flex; gap:0.4rem;
+    padding:0.7rem 1.5rem;
+    overflow-x:auto;
+  }
+  nav.subnav a{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.78rem;
+    text-decoration:none;
+    color:var(--ink-soft);
+    padding:0.4rem 0.7rem;
+    border-radius:3px;
+    white-space:nowrap;
+    border:1px solid transparent;
+    transition:border-color .15s, color .15s;
+  }
+  nav.subnav a:hover{ border-color:var(--rule); color:var(--ink); }
+ 
+  main{ max-width:1000px; margin:0 auto; padding:0 1.5rem 5rem; }
+ 
+  /* ---------- THEORY STRIP ---------- */
+  .theory{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(210px,1fr));
+    gap:1px;
+    background:var(--rule);
+    border:1px solid var(--rule);
+    margin:2.2rem 0 4rem;
+    border-radius:6px;
+    overflow:hidden;
+  }
+  .theory-card{
+    background:var(--paper-card);
+    padding:1.3rem 1.3rem 1.5rem;
+  }
+  .theory-card .label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.7rem;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--teal-deep);
+    margin-bottom:0.5rem;
+  }
+  .theory-card h3{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:1.05rem;
+    margin:0 0 0.6rem;
+  }
+  .theory-card .formula{
+    font-size:0.92rem;
+    color:var(--ink-soft);
+  }
+ 
+  /* ---------- SECTION HEADERS ---------- */
+  .ex-section{ margin-bottom:5rem; scroll-margin-top:5rem; }
+ 
+  .ex-header{
+    display:flex;
+    align-items:baseline;
+    gap:1rem;
+    margin-bottom:0.4rem;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:0.9rem;
+  }
+  .ex-number{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:2.6rem;
+    color:var(--teal-deep);
+    line-height:1;
+  }
+  .ex-header h2{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:1.5rem;
+    margin:0;
+  }
+ 
+  .statement{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.88rem;
+    color:var(--ink-soft);
+    background:var(--paper-card);
+    border:1px solid var(--rule);
+    border-left:4px solid var(--amber);
+    padding:1rem 1.2rem;
+    margin:1.3rem 0 2rem;
+    border-radius:0 4px 4px 0;
+  }
+  .statement b{ color:var(--ink); }
+ 
+  /* ---------- RULER + STEP CARD ---------- */
+  .steps{
+    position:relative;
+    padding-left:2.2rem;
+  }
+  .steps::before{
+    content:"";
+    position:absolute;
+    left:0.55rem; top:0.3rem; bottom:0.3rem;
+    width:1px;
+    background:
+      repeating-linear-gradient(to bottom, var(--teal) 0 1px, transparent 1px 12px);
+    opacity:0.5;
+  }
+ 
+  .step{
+    position:relative;
+    background:var(--paper-card);
+    border:1px solid var(--rule);
+    border-radius:6px;
+    padding:1.2rem 1.4rem 1.3rem;
+    margin-bottom:1.1rem;
+  }
+  .step::before{
+    content: attr(data-tick);
+    position:absolute;
+    left:-2.05rem;
+    top:1.15rem;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.7rem;
+    color:var(--teal-deep);
+    background:var(--paper);
+    padding:0 3px;
+  }
+  .step h4{
+    margin:0 0 0.6rem;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:0.92rem;
+    color:var(--ink);
+    text-transform:uppercase;
+    letter-spacing:0.03em;
+  }
+  .step .math{ overflow-x:auto; }
+  .step p{ margin:0.4rem 0; color:var(--ink-soft); font-size:0.95rem; }
+  .step p:first-child{ margin-top:0; }
+ 
+  /* result chip */
+  .result{
+    display:inline-flex;
+    align-items:center;
+    gap:0.55rem;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.95rem;
+    background:#fff;
+    border:1.5px solid var(--teal-deep);
+    border-radius:4px;
+    padding:0.5rem 0.85rem;
+    margin:0.5rem 0.5rem 0.2rem 0;
+  }
+  .result .tag{
+    font-size:0.65rem;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:#fff;
+    background:var(--teal-deep);
+    padding:2px 6px;
+    border-radius:2px;
+  }
+  .result.warn{ border-color:var(--rust); }
+  .result.warn .tag{ background:var(--rust); }
+  .result.gold{ border-color:var(--amber); }
+  .result.gold .tag{ background:var(--amber); }
+ 
+  .results-row{ display:flex; flex-wrap:wrap; margin-top:0.6rem; }
+ 
+  .conclusion{
+    background:var(--ink);
+    color:#EEF1EC;
+    border-radius:6px;
+    padding:1.3rem 1.5rem;
+    margin-top:1.2rem;
+    font-size:0.96rem;
+  }
+  .conclusion .label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.7rem;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:#8FD9C7;
+    margin-bottom:0.5rem;
+    display:block;
+  }
+ 
+  table.datatable{
+    width:100%;
+    border-collapse:collapse;
+    margin:0.6rem 0 0.2rem;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.85rem;
+  }
+  table.datatable th, table.datatable td{
+    border:1px solid var(--rule);
+    padding:0.5rem 0.7rem;
+    text-align:left;
+  }
+  table.datatable th{
+    background:#F0EFE9;
+    font-weight:600;
+    text-transform:uppercase;
+    font-size:0.7rem;
+    letter-spacing:0.05em;
+    color:var(--ink-soft);
+  }
+ 
+  footer{
+    border-top:1px solid var(--rule);
+    padding:2.2rem 1.5rem 3rem;
+    max-width:1000px;
+    margin:0 auto;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.78rem;
+    color:var(--ink-soft);
+  }
+ 
+  @media (max-width:600px){
+    .hero{ padding:3.5rem 1.2rem 3rem; }
+    .ex-number{ font-size:1.9rem; }
+    .steps{ padding-left:1.6rem; }
+    .step::before{ left:-1.55rem; }
+  }
+</style>
+</head>
+<body>
+ 
+<header class="hero">
+  <div class="hero-eyebrow">
+    <span class="tick-row">
+      <span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span>
+      <span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span>
+    </span>
+    Cálculo I · Desafío integrador
+  </div>
+  <h1>Series de Taylor y <em>propagación del error</em></h1>
+  <p class="lede">Cuadernillo de resolución de los tres ejercicios integradores: error absoluto y relativo, aproximación polinómica de Taylor, residuo de Lagrange y propagación del error mediante diferenciales.</p>
+  <div class="hero-meta">
+    <span class="meta-chip">Ejercicios resueltos: <b>3</b></span>
+    <span class="meta-chip">Herramientas: <b>Eₐ · Er(%) · Pₙ(x) · Δy</b></span>
+  </div>
+</header>
+ 
+<nav class="subnav">
+  <div class="inner">
+    <a href="#teoria">Marco teórico</a>
+    <a href="#ej1">Ejercicio 1 — Placa cuadrada</a>
+    <a href="#ej2">Ejercicio 2 — Taylor de eˣ</a>
+    <a href="#ej3">Ejercicio 3 — Péndulo</a>
+  </div>
+</nav>
+ 
+<main>
+ 
+  <section id="teoria">
+    <div class="theory">
+      <div class="theory-card">
+        <div class="label">01 — Medición</div>
+        <h3>Error absoluto</h3>
+        <div class="formula">\( E_a = |x_v - x_a| \)</div>
+      </div>
+      <div class="theory-card">
+        <div class="label">02 — Medición</div>
+        <h3>Error relativo (%)</h3>
+        <div class="formula">\( E_r(\%) = \dfrac{|x_v-x_a|}{|x_v|}\times 100 \)</div>
+      </div>
+      <div class="theory-card">
+        <div class="label">03 — Aproximación</div>
+        <h3>Polinomio de Taylor</h3>
+        <div class="formula">\( P_n(x)=\displaystyle\sum_{k=0}^{n}\dfrac{f^{(k)}(a)}{k!}(x-a)^k \)</div>
+      </div>
+      <div class="theory-card">
+        <div class="label">04 — Propagación</div>
+        <h3>Error propagado</h3>
+        <div class="formula">\( \Delta y \approx f'(x)\,\Delta x \)</div>
+      </div>
+    </div>
+  </section>
+ 
+  <!-- ============ EJERCICIO 1 ============ -->
+  <section class="ex-section" id="ej1">
+    <div class="ex-header">
+      <span class="ex-number">1</span>
+      <h2>Error absoluto, relativo y propagación — placa cuadrada</h2>
+    </div>
+    <div class="statement">
+      Un ingeniero mide el lado de una placa cuadrada y obtiene <b>xₐ = 12.4 cm</b>, mientras que el valor de referencia (certificado) es <b>x_v = 12.5 cm</b>. El área se calcula como A = x².
+    </div>
+ 
+    <div class="steps">
+      <div class="step" data-tick="a">
+        <h4>a) Error absoluto</h4>
+        <div class="math">\[ E_a = |x_v - x_a| = |12.5 - 12.4| \]</div>
+        <div class="results-row">
+          <span class="result"><span class="tag">Eₐ</span> 0.1 cm</span>
+        </div>
+      </div>
+ 
+      <div class="step" data-tick="b">
+        <h4>b) Error relativo porcentual</h4>
+        <div class="math">\[ E_r(\%) = \frac{E_a}{|x_v|}\times 100 = \frac{0.1}{12.5}\times 100 \]</div>
+        <div class="results-row">
+          <span class="result"><span class="tag">Er</span> 0.8 %</span>
+        </div>
+      </div>
+ 
+      <div class="step" data-tick="c">
+        <h4>c) Error propagado al área</h4>
+        <p>Con \( A(x) = x^2 \Rightarrow A'(x) = 2x \). Se evalúa en \( x = x_v = 12.5 \) con \( \Delta x = E_a = 0.1 \):</p>
+        <div class="math">\[ A'(12.5) = 2(12.5) = 25 \ \text{cm} \]</div>
+        <div class="math">\[ \Delta A \approx |A'(x)|\,\Delta x = 25 \times 0.1 \]</div>
+        <div class="results-row">
+          <span class="result"><span class="tag">ΔA</span> 2.5 cm²</span>
+        </div>
+      </div>
+ 
+      <div class="step" data-tick="d">
+        <h4>d) Error relativo porcentual del área</h4>
+        <p>Con \( A(x_v) = (12.5)^2 = 156.25 \ \text{cm}^2 \):</p>
+        <div class="math">\[ E_r(A)(\%) = \frac{\Delta A}{|A(x)|}\times 100 = \frac{2.5}{156.25}\times 100 \]</div>
+        <div class="results-row">
+          <span class="result gold"><span class="tag">Er(A)</span> 1.6 %</span>
+        </div>
+      </div>
+    </div>
+ 
+    <div class="conclusion">
+      <span class="label">Lectura del resultado</span>
+      Al elevar al cuadrado, el error relativo del área (1.6 %) resulta ser el doble del error relativo del lado (0.8 %) — consistente con la regla general \( E_r(x^n)\approx n\,E_r(x) \), propia de cómo la propagación del error amplifica los errores en funciones potenciales.
+    </div>
+  </section>
+ 
+  <!-- ============ EJERCICIO 2 ============ -->
+  <section class="ex-section" id="ej2">
+    <div class="ex-header">
+      <span class="ex-number">2</span>
+      <h2>Taylor, error de aproximación y residuo de Lagrange — f(x) = eˣ</h2>
+    </div>
+    <div class="statement">
+      Sea <b>f(x) = eˣ</b>. Se pide el polinomio de Taylor de grado 1 y de grado 2 alrededor de <b>a = 0</b>, usarlos para aproximar <b>e⁰·³</b>, comparar contra el valor real y acotar el error de truncamiento con el residuo de Lagrange.
+    </div>
+ 
+    <div class="steps">
+      <div class="step" data-tick="a">
+        <h4>a) Polinomios de Taylor en a = 0</h4>
+        <p>Como \( f^{(k)}(x)=e^x \) para todo k, entonces \( f^{(k)}(0)=1 \).</p>
+        <div class="math">\[ P_1(x) = 1 + x \]</div>
+        <div class="math">\[ P_2(x) = 1 + x + \frac{x^2}{2} \]</div>
+      </div>
+ 
+      <div class="step" data-tick="b">
+        <h4>b) Aproximación de e⁰·³</h4>
+        <div class="math">\[ P_1(0.3) = 1 + 0.3 = 1.3 \]</div>
+        <div class="math">\[ P_2(0.3) = 1 + 0.3 + \frac{(0.3)^2}{2} = 1 + 0.3 + 0.045 = 1.345 \]</div>
+      </div>
+ 
+      <div class="step" data-tick="c">
+        <h4>c) Comparación con el valor real</h4>
+        <p>Valor real (calculadora): \( e^{0.3} = 1.349859 \) (redondeado a 6 decimales).</p>
+        <table class="datatable">
+          <tr><th>Aproximación</th><th>Valor</th><th>Eₐ</th><th>Er (%)</th></tr>
+          <tr><td>P₁(0.3)</td><td>1.300000</td><td>0.049859</td><td>3.694 %</td></tr>
+          <tr><td>P₂(0.3)</td><td>1.345000</td><td>0.004859</td><td>0.360 %</td></tr>
+        </table>
+      </div>
+ 
+      <div class="step" data-tick="d">
+        <h4>d) Cota del residuo de Lagrange para P₂(0.3)</h4>
+        <div class="math">\[ R_2(x) = \frac{f'''(\xi)}{3!}x^3, \qquad \xi \in (0, 0.3) \]</div>
+        <p>Como \( f'''(x)=e^x \) es creciente, se acota \( e^{\xi} < e^{0.3} \):</p>
+        <div class="math">\[ |R_2(0.3)| < \frac{e^{0.3}}{6}(0.3)^3 = \frac{1.349859}{6}\times 0.027 \]</div>
+        <div class="results-row">
+          <span class="result warn"><span class="tag">cota</span> |R₂| &lt; 0.006074</span>
+          <span class="result"><span class="tag">real</span> Eₐ = 0.004859</span>
+        </div>
+      </div>
+    </div>
+ 
+    <div class="conclusion">
+      <span class="label">Lectura del resultado</span>
+      La cota teórica del residuo (0.006074) es mayor que el error absoluto real observado (0.004859), tal como debe ocurrir: el residuo de Lagrange acota por arriba y confirma que P₂ es una aproximación válida y consistente con la teoría.
+    </div>
+  </section>
+ 
+  <!-- ============ EJERCICIO 3 ============ -->
+  <section class="ex-section" id="ej3">
+    <div class="ex-header">
+      <span class="ex-number">3</span>
+      <h2>Síntesis integradora — péndulo simple</h2>
+    </div>
+    <div class="statement">
+      \( g = \dfrac{4\pi^2 L}{T^2} \), con <b>L = 1.000 m</b> (ΔL = 0.002 m) y <b>T = 2.006 s</b> (ΔT = 0.004 s). Referencia: <b>g_real = 9.8 m/s²</b>.
+    </div>
+ 
+    <div class="steps">
+      <div class="step" data-tick="a">
+        <h4>a) Valor experimental de g y comparación</h4>
+        <div class="math">\[ g = \frac{4\pi^2(1.000)}{(2.006)^2} = \frac{39.478418}{4.024036} \]</div>
+        <div class="results-row">
+          <span class="result"><span class="tag">g exp</span> 9.8107 m/s²</span>
+        </div>
+        <div class="math">\[ E_a = |9.8 - 9.8107| \qquad E_r(\%) = \frac{E_a}{9.8}\times 100 \]</div>
+        <div class="results-row">
+          <span class="result"><span class="tag">Eₐ</span> 0.0107 m/s²</span>
+          <span class="result"><span class="tag">Er</span> 0.109 %</span>
+        </div>
+      </div>
+ 
+      <div class="step" data-tick="b">
+        <h4>b) Derivadas parciales</h4>
+        <div class="math">\[ \frac{\partial g}{\partial L} = \frac{4\pi^2}{T^2} = \frac{39.478418}{4.024036} \approx 9.8107 \ \text{s}^{-2} \]</div>
+        <div class="math">\[ \frac{\partial g}{\partial T} = -\frac{8\pi^2 L}{T^3} = -\frac{78.956835}{8.072216} \approx -9.7813 \ \text{m/s}^3 \]</div>
+      </div>
+ 
+      <div class="step" data-tick="c">
+        <h4>c) Propagación del error y coherencia</h4>
+        <div class="math">\[ \Delta g \approx \left|\frac{\partial g}{\partial L}\right|\Delta L + \left|\frac{\partial g}{\partial T}\right|\Delta T \]</div>
+        <div class="math">\[ \Delta g \approx (9.8107)(0.002) + (9.7813)(0.004) = 0.01962 + 0.03913 \]</div>
+        <div class="results-row">
+          <span class="result gold"><span class="tag">Δg</span> 0.0587 m/s²</span>
+          <span class="result"><span class="tag">Eₐ (a)</span> 0.0107 m/s²</span>
+        </div>
+        <p>Como \( \Delta g \ (0.0587) \gg E_a \ (0.0107) \), la incertidumbre experimental cubre sobradamente la discrepancia observada frente a g_real: el resultado es coherente con la medición, dominado principalmente por la incertidumbre en T.</p>
+      </div>
+ 
+      <div class="step" data-tick="d">
+        <h4>d) Taylor de g(T) alrededor de T = 2 (con L = 1 fijo)</h4>
+        <p>Con \( g(T) = \dfrac{4\pi^2}{T^2} \):</p>
+        <div class="math">\[ g(2) = \frac{4\pi^2}{4} = \pi^2 \approx 9.8696 \]</div>
+        <div class="math">\[ g'(T) = -\frac{8\pi^2}{T^3} \ \Rightarrow \ g'(2) = -\frac{8\pi^2}{8} = -\pi^2 \approx -9.8696 \]</div>
+        <div class="math">\[ P_1(T) = \pi^2 - \pi^2(T-2) \]</div>
+        <div class="math">\[ P_1(2.006) = \pi^2(1 - 0.006) \]</div>
+        <div class="results-row">
+          <span class="result"><span class="tag">P₁(2.006)</span> 9.8104 m/s²</span>
+          <span class="result"><span class="tag">g exacto (a)</span> 9.8107 m/s²</span>
+        </div>
+      </div>
+    </div>
+ 
+    <div class="conclusion">
+      <span class="label">Lectura del resultado</span>
+      La aproximación lineal de Taylor (9.8104) y el cálculo directo (9.8107) casi coinciden — difieren apenas en 0.0003 m/s², porque ΔT es pequeño. Esto confirma que la fórmula de propagación del error <em>es</em>, en esencia, el término lineal de una expansión de Taylor: \( \Delta y \approx f'(a)\,\Delta x \) es exactamente \( P_1(a+\Delta x) - f(a) \). Propagar errores por diferenciales y aproximar por Taylor de primer orden son la misma herramienta matemática aplicada a dos preguntas distintas.
+    </div>
+  </section>
+ 
+</main>
+ 
+<footer>
+  Cálculo I — Desafío integrador · Aproximación por Series de Taylor y Propagación del Error
+</footer>
+ 
+</body>
+</html>
+ 
 
